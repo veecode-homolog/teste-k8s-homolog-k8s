@@ -1,0 +1,8 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: k8s-obs-petclinic-teste-k8s-homolog-k8s-location
+  description: Location to import all template-applications-otlp-observability catalog components
+spec:
+  targets:
+    - ./.platform/*.yaml

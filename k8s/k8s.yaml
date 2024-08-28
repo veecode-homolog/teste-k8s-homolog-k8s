@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: app-exemple-platform-k8s
+    backstage.io/kubernetes-id: app-exemple-platform-k8s
+  name: app-exemple-platform-k8s
+  namespace: vkpr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-exemple-platform-k8s
+  template:
+    metadata:
+      labels:
+        app: app-exemple-platform-k8s
+        backstage.io/kubernetes-id: app-exemple-platform-k8s
+      annotations:
+        sidecar.opentelemetry.io/inject: "true"
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      containers:
+        - image: docker.io/veecode/app-exemple-platform-k8s:latest
+          name: app-exemple-platform-k8s
+          ports:
+            - containerPort: 8081
+          resources:
+            requests:
+              memory: 256Mi
+            limits:
+              memory: 756Mi
+          imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: app-exemple-platform-k8s-service-0
+    backstage.io/kubernetes-id: app-exemple-platform-k8s
+  name: app-exemple-platform-k8s-service-0
+  namespace: vkpr
+  annotations:
+    sidecar.opentelemetry.io/inject: "true"
+    instrumentation.opentelemetry.io/inject-java: "true"
+spec:
+  ports:
+    - name: 8081-8081
+      port: 8081
+      protocol: TCP
+      targetPort: 8081
+  selector:
+    app: app-exemple-platform-k8s
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: certmanager-issuer
+    instrumentation.opentelemetry.io/inject-java: "true"
+    konghq.com/https-redirect-status-code: "308"
+    konghq.com/preserve-host: "true"
+    konghq.com/protocols: https
+    konghq.com/strip-path: "true"
+    kubernetes.io/tls-acme: "true"
+    sidecar.opentelemetry.io/inject: "true"
+  name: app-exemple-platform-k8s
+  namespace: vkpr
+  labels:
+    backstage.io/kubernetes-id: app-exemple-platform-k8s
+spec:
+  ingressClassName: kong
+  rules:
+    - host: rest.homolog-minimal-otlp.vkpr.platform.vee.codes
+      http:
+        paths:
+          - backend:
+              service:
+                name: app-exemple-platform-k8s-service-0
+                port:
+                  number: 8081
+            path: /app-exemple-platform-k8s
+            pathType: Prefix
+  tls:
+    - hosts:
+        - rest.homolog-minimal-otlp.vkpr.platform.vee.codes
+      secretName: rest.homolog-minimal-otlp.vkpr.platform.vee.codes-tls
